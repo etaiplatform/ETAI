@@ -1,0 +1,11 @@
+venv
+flaskApp/static
+DashApp/static
+*.ipynb_checkpoints
+.idea
+DashApp/app2.py
+DashApp/app1.py
+*.ipynb
+*__pycache__
+__pycache__
+*.csv
