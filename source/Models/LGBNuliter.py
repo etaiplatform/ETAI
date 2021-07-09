@@ -180,4 +180,4 @@ def start_after_multi_models(data, clf_preds, startDate='2016-01-01', endDate='2
         plt.clf()
         return preds[-24 * int(n_days):], path, data["dayAheadPrices"].iloc[-24 * int(n_days):].to_list()
     else:
-        return preds[-24 * int(n_days):], data["dayAheadPrices"].iloc[-24 * int(n_days):].to_list()
+        return preds[-24 * int(n_days):], None, data["dayAheadPrices"].iloc[-24 * int(n_days):].to_list()

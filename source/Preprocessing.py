@@ -68,24 +68,24 @@ def create_features(data):
     data["t-30_lag_price"] = data["dayAheadPrices"].shift(24 * 30)
     data["t-365_lag_price"] = data["dayAheadPrices"].shift(24 * 365)
 
-    prods = ['production', 'consumption']  # 'naturalGas', 'wind',
-    for prod in prods:
-        data["t-1_lag_" + prod] = data[prod].shift(24 * 1)
-        # #         data["t-2_lag_"+prod] = data[prod].shift(24*2)
-        # #         data["t-3_lag_"+prod] = data[prod].shift(24*3)
-        # #         data["t-4_lag_"+prod] = data[prod].shift(24*4)
-        # #         data["t-5_lag_"+prod] = data[prod].shift(24*5)
-        # #         data["t-6_lag_"+prod] = data[prod].shift(24*6)
-        data["t-7_lag_" + prod] = data[prod].shift(24 * 7)
-        # #         data["t-14_lag_"+prod] = data[prod].shift(24*14)
-        # #         data["t-21_lag_"+prod] = data[prod].shift(24*21)
-        # #         data["t-28_lag_"+prod] = data[prod].shift(24*28)
-        # #         data["t-365_lag_"+prod] = data[prod].shift(24*365)
-        #         data['rolling_mean_weekly_'+prod] = data[prod].rolling(7*24).mean().shift(24)
-        # #         data['rolling_mean_2weekly_'+prod] = data[prod].rolling(14*24).mean().shift(24)
-        # #         data['rolling_mean_monthly_'+prod] = data[prod].rolling(30*24).mean().shift(24)
-        # # #         data['rolling_mean_year_'+prod] = data[prod].rolling(365*24).mean().shift(24)
-        data.drop(prod, axis=1, inplace=True)
+    # prods = ['production', 'consumption']  # 'naturalGas', 'wind',
+    # for prod in prods:
+    #     data["t-1_lag_" + prod] = data[prod].shift(24 * 1)
+    #     # #         data["t-2_lag_"+prod] = data[prod].shift(24*2)
+    #     # #         data["t-3_lag_"+prod] = data[prod].shift(24*3)
+    #     # #         data["t-4_lag_"+prod] = data[prod].shift(24*4)
+    #     # #         data["t-5_lag_"+prod] = data[prod].shift(24*5)
+    #     # #         data["t-6_lag_"+prod] = data[prod].shift(24*6)
+    #     data["t-7_lag_" + prod] = data[prod].shift(24 * 7)
+    #     # #         data["t-14_lag_"+prod] = data[prod].shift(24*14)
+    #     # #         data["t-21_lag_"+prod] = data[prod].shift(24*21)
+    #     # #         data["t-28_lag_"+prod] = data[prod].shift(24*28)
+    #     # #         data["t-365_lag_"+prod] = data[prod].shift(24*365)
+    #     #         data['rolling_mean_weekly_'+prod] = data[prod].rolling(7*24).mean().shift(24)
+    #     # #         data['rolling_mean_2weekly_'+prod] = data[prod].rolling(14*24).mean().shift(24)
+    #     # #         data['rolling_mean_monthly_'+prod] = data[prod].rolling(30*24).mean().shift(24)
+    #     # # #         data['rolling_mean_year_'+prod] = data[prod].rolling(365*24).mean().shift(24)
+    #     data.drop(prod, axis=1, inplace=True)
 
     data['rolling_mean_weekly_price'] = data['dayAheadPrices'].rolling(7 * 24).mean().shift(24)
     data['rolling_std_weekly_price'] = data['dayAheadPrices'].rolling(7 * 24).std().shift(24)
@@ -258,6 +258,7 @@ def create_nextDay(data):
 def process_date(data):
     #     data['date'] = data['date'].apply(lambda x: str(x)[:-6])
     #     data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%dT%H:%M:%S')
+    print(data)
     data['year'] = data['date'].dt.year
     data['month'] = data['date'].dt.month
     data['day'] = data['date'].dt.day
@@ -265,23 +266,39 @@ def process_date(data):
     data['dayofweek_num'] = data['date'].dt.dayofweek
     data['dayofweek_name'] = data['date'].dt.day_name()
     data['Hour'] = data['date'].dt.hour
+    data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%d')
     return data
 
 
 # In[134]:
 
 def preprocess_no_feature(startDate, endDate):
-    data = read_consumption_plan(startDate=startDate, endDate=endDate)
-    data = data[data['lep'].notna()]
-    total_planned_gen = read_total_planned_gen(startDate=startDate, endDate=endDate)
     day_ahead = read_dayAhead(startDate=startDate, endDate=endDate)
-    #     data = pd.merge(data, read_total_planned_gen, left_on =['date'], right_on=["date"], how='outer')
+    # if pd.to_datetime(endDate) <= datetime.date.today():
+    #     data = read_consumption_plan(startDate=startDate, endDate=endDate)
+    #     data = data[data['lep'].notna()]
+    #     total_planned_gen = read_total_planned_gen(startDate=startDate, endDate=endDate)
+    #
+    #     #     data = pd.merge(data, read_total_planned_gen, left_on =['date'], right_on=["date"], how='outer')
+    #     data["dayAheadPrices"] = day_ahead[1]
+    #     data["production"] = pd.to_numeric(total_planned_gen["dpp"])
+    #     data["consumption"] = pd.to_numeric(data["lep"])
+    #     data.drop('lep', axis=1, inplace=True)
+    # else:
+    # data = pd.DataFrame(day_ahead, columns=["date", "dayAheadPrices"])
+    data = pd.DataFrame(day_ahead[0], columns=['date'])
     data["dayAheadPrices"] = day_ahead[1]
-    data["production"] = pd.to_numeric(total_planned_gen["dpp"])
-    data["consumption"] = pd.to_numeric(data["lep"])
-    data.drop('lep', axis=1, inplace=True)
-    data['date'] = data['date'].apply(lambda x: str(x)[:-6])
-    data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%dT%H:%M:%S')
+    print(data)
+    if data.shape[0] < 24:
+        print(pd.date_range(start=pd.to_datetime(startDate),
+                            end=(pd.to_datetime(endDate) + pd.DateOffset(days=int(1))) - pd.DateOffset(hours=1),
+                            freq='H').tolist(), "empty")
+        data = pd.DataFrame(pd.date_range(start=pd.to_datetime(startDate),
+                                          end=(pd.to_datetime(endDate) + pd.DateOffset(days=int(1))) - pd.DateOffset(
+                                              hours=1),
+                                          freq='H').tolist(), columns=['date'])
+    # data['date'] = data['date'].apply(lambda x: str(x)[:-9])
+    data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%dT%H:%M:%S', )
     if pd.to_datetime(endDate, format='%Y-%m-%dT%H:%M:%S') not in data["date"].to_list():
         data = create_nextDay(data)
     data = process_date(data)
@@ -335,12 +352,15 @@ def prep_from_scratch(startDate, endDate):
 def preprocess_final(startDate='2016-01-01', endDate='2020-12-31'):
     if os.path.exists("../API/main_data.csv"):
         data = pd.read_csv("../API/main_data.csv")
+        data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%d')
         if pd.to_datetime(data.iloc[-1]["date"]) < pd.to_datetime(endDate):
             print("catching up to date")
             data = catch_up_2_date(data, endDate)
     else:
         print("Fetching and processing the data...")
-        data = preprocess_no_feature("2011-12-01", str(datetime.date.today()))
+        data = preprocess_no_feature("2011-12-01",
+                                     str(datetime.date.today()) if int(datetime.datetime.now().hour) < 13 else str(
+                                         datetime.date.today() + datetime.timedelta(days=1)))
         if 'date' in data.columns:
             data = data.set_index('date')
         data = reduce_mem_usage(data)
@@ -379,9 +399,13 @@ def add_on_top(data, n):
 def catch_up_2_date(data, catchDate):
     startDate = str(pd.to_datetime(data.iloc[-1]["date"]) + pd.Timedelta(days=1))[:10]
     endDate = catchDate
+    # if pd.to_datetime(endDate) <= datetime.date.today() or (pd.to_datetime(endDate) == (
+    #         pd.to_datetime(datetime.date.today()) + pd.Timedelta(days=1)) and datetime.datetime.now().hour > 13):
     topping = preprocess_no_feature(startDate, endDate).reset_index()
     data = pd.concat([data, topping])
+    data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%d')
     data = data.set_index('date')
     # data.reset_index()
     data.to_csv('main_data.csv')
     return data
+    # return data

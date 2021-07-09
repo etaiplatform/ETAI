@@ -61,20 +61,22 @@ def predict_lastn_reg(model, days_pred, data, version):
     groups = X["year"].astype('str') + "_" + X["month"].astype('str') + "_" + X["day"].astype('str')
     oof_preds = np.zeros((days_pred * 24))
     oof_test = np.zeros((days_pred * 24))
-    kf = PurgedGroupTimeSeriesSplit(days_pred, group_gap=0, max_test_group_size=1, max_train_group_size=1).split(X, y,
-                                                                                                                 groups=
-                                                                                                                 groups.factorize()[
-                                                                                                                     0])
+    kf = PurgedGroupTimeSeriesSplit(days_pred, group_gap=0, max_test_group_size=1, max_train_group_size=1) \
+        .split(X, y, groups=groups.factorize()[0])
     estimator = None
     for i, (train_index, test_index) in enumerate(kf):
         x_train_kf, x_test_kf = X.iloc[:test_index[0], :].copy(), X.iloc[test_index, :].copy()
         y_train_kf, y_test_kf = y[:test_index[0]], y[test_index]
         model.fit(x_train_kf.drop('dayAheadPrices', axis=1, errors='ignore'), y_train_kf)
         preds = model.predict(x_test_kf.drop('dayAheadPrices', axis=1, errors='ignore'))
-        print("training period {} - {}".format(x_train_kf.iloc[0].name, x_train_kf.iloc[-1].name))
-        print("predicting period {} - {}".format(x_test_kf.iloc[0].name, x_test_kf.iloc[-1].name))
         oof_preds[24 * i: 24 * (i + 1)] = (preds)
         oof_test[24 * i: 24 * (i + 1)] = (y_test_kf)
+        if sum(y_train_kf.isna()) >= 24:
+            y_train_kf.values[y_train_kf.reset_index(drop=True).isnull().index[-24:].to_list()] \
+                = oof_preds[24 * i: 24 * (i + 1)]
+        print("training period {} - {}".format(x_train_kf.iloc[0].name, x_train_kf.iloc[-1].name))
+        print("predicting period {} - {}".format(x_test_kf.iloc[0].name, x_test_kf.iloc[-1].name))
+
     return oof_preds
 
 
@@ -108,6 +110,8 @@ def start(startDate='2016-01-01', endDate='2020-12-31', n_days=2, plot=False):
     oof_preds = predict_lastn_reg(model, int(n_days) + 1, data, 'none')
     test_res = data["dayAheadPrices"].iloc[-24 * int(n_days) + 1:].to_list()
     pred_res = oof_preds[-24 * int(n_days) + 1:]
+    if np.isnan(test_res).all():
+        test_res = [-1 for _ in range(len(test_res))]
     print("MAE of the last predicted batch for None: ", mean_absolute_error(test_res, pred_res))
     print("SMAPE of the last predicted batch for None: ", smape(test_res, pred_res))
     print("MAPE of the last predicted batch for None: ", mean_absolute_percentage_error(test_res, pred_res))
@@ -121,7 +125,7 @@ def start(startDate='2016-01-01', endDate='2020-12-31', n_days=2, plot=False):
         plt.clf()
         return pred_res, path, test_res
     else:
-        return pred_res, test_res
+        return pred_res, None, test_res
 
 
 def start_after(data, preds, startDate='2016-01-01', endDate='2020-12-31', n_days=2, plot=False):
@@ -133,6 +137,8 @@ def start_after(data, preds, startDate='2016-01-01', endDate='2020-12-31', n_day
     oof_preds = predict_lastn_reg(model, int(n_days) + 1, data, 'binary')
     test_res = data["dayAheadPrices"].iloc[-24 * int(n_days) + 1:].to_list()
     pred_res = oof_preds[-24 * int(n_days) + 1:]
+    if np.isnan(test_res).all():
+        test_res = [-1 for _ in range(len(test_res))]
     print("MAE of the last predicted batch for binary: ", mean_absolute_error(test_res, pred_res))
     print("SMAPE of the last predicted batch for binary: ", smape(test_res, pred_res))
     print("MAPE of the last predicted batch for binary: ", mean_absolute_percentage_error(test_res, pred_res))
@@ -146,7 +152,7 @@ def start_after(data, preds, startDate='2016-01-01', endDate='2020-12-31', n_day
         plt.clf()
         return pred_res, path, test_res
     else:
-        return pred_res, test_res
+        return pred_res, None, test_res
 
 
 def start_after_multi(data, preds, startDate='2016-01-01', endDate='2020-12-31', n_days=2, plot=False):
@@ -158,10 +164,18 @@ def start_after_multi(data, preds, startDate='2016-01-01', endDate='2020-12-31',
     oof_preds = predict_lastn_reg(model, int(n_days) + 1, data, 'multi')
     test_res = data["dayAheadPrices"].iloc[-24 * int(n_days):].to_list()
     pred_res = oof_preds[-24 * int(n_days):]
+    # if np.isnan(test_res).all():
+    test_res = [-1 if np.isnan(i) else i for i in test_res]
+    # print([np.isnan(i) for i in range(le)])
+    # print(np.nan, type(np.nan))
+    # print(np.where(test_res == np.nan, -1, test_res))
+    print(test_res)
+    # print(pred_res)
     print("MAE of the last predicted batch for multi: ", mean_absolute_error(test_res, pred_res))
     print("SMAPE of the last predicted batch for multi: ", smape(test_res, pred_res))
     print("MAPE of the last predicted batch for multi: ", mean_absolute_percentage_error(test_res, pred_res))
     print("RMSE of the last predicted batch for multi: ", mean_squared_error(test_res, pred_res, squared=False))
+
     if plot:
         plt.plot(data["dayAheadPrices"].iloc[-24 * int(n_days):].to_list(), label="truth")
         plt.plot(list(oof_preds[-24 * int(n_days):]), label="prediction")
@@ -183,6 +197,7 @@ def start_after_dimdik_multi(data, preds, startDate='2016-01-01', endDate='2020-
     oof_preds = predict_lastn_reg_dimdik(model, int(n_days), data)
     test_res = data["dayAheadPrices"].iloc[-24 * int(n_days):].to_list()
     pred_res = oof_preds[-24 * int(n_days):]
+    test_res = [-1 if np.isnan(i) else i for i in test_res]
     print("MAE of the last predicted batch for multi: ", mean_absolute_error(test_res, pred_res))
     print("SMAPE of the last predicted batch for multi: ", smape(test_res, pred_res))
     print("MAPE of the last predicted batch for multi: ", mean_absolute_percentage_error(test_res, pred_res))
@@ -196,4 +211,4 @@ def start_after_dimdik_multi(data, preds, startDate='2016-01-01', endDate='2020-
         plt.clf()
         return pred_res, path, test_res
     else:
-        return pred_res, test_res
+        return pred_res, None, test_res

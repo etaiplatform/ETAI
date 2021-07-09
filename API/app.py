@@ -73,8 +73,10 @@ def predict():
     elif arc == "DMDNUL1":
         predictions, truth, plotpath, predictions_clf = RunIterNUL.run_dimdik(startDate, endDate, days, plot=plot)
 
-    date_range = pd.date_range(start=pd.to_datetime(endDate) - pd.DateOffset(days=7),
-                               end=pd.to_datetime(pd.to_datetime(endDate) - pd.DateOffset(hours=1)), freq='H').tolist()
+    date_range = pd.date_range(start=pd.to_datetime(endDate) - pd.DateOffset(days=int(days) - 1),
+                               end=pd.to_datetime(
+                                   (pd.to_datetime(endDate) + pd.DateOffset(days=1)) - pd.DateOffset(hours=1)),
+                               freq='H').tolist()
     date_range = [str(dr) for dr in date_range]
     if plotpath:
         response = {

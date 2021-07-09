@@ -10,6 +10,7 @@ import gc
 import lightgbm as lgb
 
 from sklearn.metrics import accuracy_score, f1_score
+# from sklearn.model_selection import RandomizedSearchCV
 
 from source.Preprocessing import preprocess_final
 from source.utils_cv import PurgedGroupTimeSeriesSplit
@@ -43,14 +44,13 @@ def predict_lastn_clf(model, days_pred, data):
     groups = X["year"].astype('str') + "_" + X["month"].astype('str') + "_" + X["day"].astype('str')
     oof_preds = np.zeros((days_pred * 24))
     oof_test = np.zeros((days_pred * 24))
-    kf = PurgedGroupTimeSeriesSplit(days_pred, group_gap=0, max_test_group_size=1, max_train_group_size=1).split(X, y,
-                                                                                                                 groups=
-                                                                                                                 groups.factorize()[
-                                                                                                                     0])
+    kf = PurgedGroupTimeSeriesSplit(days_pred, group_gap=0, max_test_group_size=1, max_train_group_size=1) \
+        .split(X, y, groups=groups.factorize()[0])
     estimator = None
     for i, (train_index, test_index) in enumerate(kf):
         x_train_kf, x_test_kf = X.iloc[:test_index[0], :].copy(), X.iloc[test_index, :].copy()
         y_train_kf, y_test_kf = y[:test_index[0]], y[test_index]
+        # print(y_train_kf)
         model.fit(x_train_kf.drop(['target'], axis=1, errors='ignore'), y_train_kf)
         #         model = lgb.train(params, lgb.Dataset(x_train_kf.drop('isSpike',axis=1, errors='ignore'), y_train_kf))
         preds = model.predict(x_test_kf.drop(['target'], axis=1, errors='ignore'))
@@ -65,7 +65,10 @@ def predict_lastn_clf(model, days_pred, data):
 # In[99]:
 
 
-def start_multi_clf(startDate='2016-01-01', endDate='2020-12-31', n_days=2):
+def start_multi_clf(startDate='2016-01-01', endDate='2020-12-31', n_days=2, optimize=False, opt_iters=50):
+    # if optimize:
+    #     clf = RandomizedSearchCV(lgb.LGBMClassifier(), lgb_param_dist, random_state=1337, n_iter=opt_iters, )
+    #     clf.fit()
     model = lgb.LGBMClassifier(**params)
     data = preprocess_final(startDate, endDate)
     data = data.drop('isSpike', axis=1, errors='ignore')

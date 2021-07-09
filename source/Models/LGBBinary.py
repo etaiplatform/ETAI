@@ -40,10 +40,8 @@ def predict_lastn_clf(model, days_pred, data):
     groups = X["year"].astype('str') + "_" + X["month"].astype('str') + "_" + X["day"].astype('str')
     oof_preds = np.zeros((days_pred * 24))
     oof_test = np.zeros((days_pred * 24))
-    kf = PurgedGroupTimeSeriesSplit(days_pred, group_gap=0, max_test_group_size=1, max_train_group_size=1).split(X, y,
-                                                                                                                 groups=
-                                                                                                                 groups.factorize()[
-                                                                                                                     0])
+    kf = PurgedGroupTimeSeriesSplit(days_pred, group_gap=0, max_test_group_size=1, max_train_group_size=1) \
+        .split(X, y, groups=groups.factorize()[0])
     estimator = None
     for i, (train_index, test_index) in enumerate(kf):
         x_train_kf, x_test_kf = X.iloc[:test_index[0], :].copy(), X.iloc[test_index, :].copy()
