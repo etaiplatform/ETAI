@@ -37,7 +37,7 @@ params = {
 
 
 def predict_lastn_clf(model, days_pred, data):
-    X = data.drop(['target'], axis=1)
+    X = data.drop(['target'], axis=1, errors='ignore')
     y = data['target']
     del data
     gc.collect()
@@ -50,6 +50,7 @@ def predict_lastn_clf(model, days_pred, data):
     for i, (train_index, test_index) in enumerate(kf):
         x_train_kf, x_test_kf = X.iloc[:test_index[0], :].copy(), X.iloc[test_index, :].copy()
         y_train_kf, y_test_kf = y[:test_index[0]], y[test_index]
+        # print(x_test_kf)
         # print(y_train_kf)
         model.fit(x_train_kf.drop(['target'], axis=1, errors='ignore'), y_train_kf)
         #         model = lgb.train(params, lgb.Dataset(x_train_kf.drop('isSpike',axis=1, errors='ignore'), y_train_kf))
@@ -65,12 +66,12 @@ def predict_lastn_clf(model, days_pred, data):
 # In[99]:
 
 
-def start_multi_clf(startDate='2016-01-01', endDate='2020-12-31', n_days=2, optimize=False, opt_iters=50):
+def start_multi_clf(startDate='2016-01-01', endDate='2020-12-31', n_days=2, target="dayAheadPrices"):
     # if optimize:
     #     clf = RandomizedSearchCV(lgb.LGBMClassifier(), lgb_param_dist, random_state=1337, n_iter=opt_iters, )
     #     clf.fit()
     model = lgb.LGBMClassifier(**params)
-    data = preprocess_final(startDate, endDate)
+    data = preprocess_final(startDate, endDate, target=target)
     data = data.drop('isSpike', axis=1, errors='ignore')
     oof_preds, oof_test = predict_lastn_clf(model, int(n_days) + 1, data)
     #     print(oof_preds[-24*int(n_days):])

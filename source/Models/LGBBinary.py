@@ -59,9 +59,9 @@ def predict_lastn_clf(model, days_pred, data):
 # In[31]:
 
 
-def start_clf(startDate='2016-01-01', endDate='2020-12-31', n_days=2):
+def start_clf(startDate='2016-01-01', endDate='2020-12-31', n_days=2, target='dayAheadPrices'):
     model = lgb.LGBMClassifier(**params)
-    data = preprocess_final(startDate, endDate)
+    data = preprocess_final(startDate, endDate, target)
     data = data.drop('target', axis=1, errors='ignore')
     oof_preds, oof_test = predict_lastn_clf(model, int(n_days) + 1, data)
     #     print(oof_preds[-24*int(n_days):])

@@ -23,8 +23,7 @@ def reduce_mem_usage(df):
 
     for col in df.columns:
         col_type = df[col].dtype
-
-        if col_type != object:
+        if col_type != object and str(col) != "date":
             c_min = df[col].min()
             c_max = df[col].max()
             if str(col_type)[:3] == 'int':
@@ -54,19 +53,19 @@ def reduce_mem_usage(df):
 # In[4]:
 
 
-def create_features(data):
-    data["t-1_lag_price"] = data["dayAheadPrices"].shift(24 * 1)
-    data["t-2_lag_price"] = data["dayAheadPrices"].shift(24 * 2)
-    data["t-3_lag_price"] = data["dayAheadPrices"].shift(24 * 3)
-    data["t-4_lag_price"] = data["dayAheadPrices"].shift(24 * 4)
-    data["t-5_lag_price"] = data["dayAheadPrices"].shift(24 * 5)
-    data["t-6_lag_price"] = data["dayAheadPrices"].shift(24 * 6)
-    data["t-7_lag_price"] = data["dayAheadPrices"].shift(24 * 7)
-    #     data["t-14_lag_price"] = data["dayAheadPrices"].shift(24*14)
-    #     data["t-21_lag_price"] = data["dayAheadPrices"].shift(24*21)
-    #     data["t-28_lag_price"] = data["dayAheadPrices"].shift(24*28)
-    data["t-30_lag_price"] = data["dayAheadPrices"].shift(24 * 30)
-    data["t-365_lag_price"] = data["dayAheadPrices"].shift(24 * 365)
+def create_features(data, target):
+    data["t-1_lag_price"] = data[target].shift(24 * 1)
+    data["t-2_lag_price"] = data[target].shift(24 * 2)
+    data["t-3_lag_price"] = data[target].shift(24 * 3)
+    data["t-4_lag_price"] = data[target].shift(24 * 4)
+    data["t-5_lag_price"] = data[target].shift(24 * 5)
+    data["t-6_lag_price"] = data[target].shift(24 * 6)
+    data["t-7_lag_price"] = data[target].shift(24 * 7)
+    #     data["t-14_lag_price"] = data[target"].shift(24*14)
+    #     data["t-21_lag_price"] = data[target"].shift(24*21)
+    #     data["t-28_lag_price"] = data[target"].shift(24*28)
+    data["t-30_lag_price"] = data[target].shift(24 * 30)
+    data["t-365_lag_price"] = data[target].shift(24 * 365)
 
     # prods = ['production', 'consumption']  # 'naturalGas', 'wind',
     # for prod in prods:
@@ -87,8 +86,8 @@ def create_features(data):
     #     # # #         data['rolling_mean_year_'+prod] = data[prod].rolling(365*24).mean().shift(24)
     #     data.drop(prod, axis=1, inplace=True)
 
-    data['rolling_mean_weekly_price'] = data['dayAheadPrices'].rolling(7 * 24).mean().shift(24)
-    data['rolling_std_weekly_price'] = data['dayAheadPrices'].rolling(7 * 24).std().shift(24)
+    data['rolling_mean_weekly_price'] = data[target].rolling(7 * 24).mean().shift(24)
+    data['rolling_std_weekly_price'] = data[target].rolling(7 * 24).std().shift(24)
     #     data['rolling_mean_2weekly_price'] = data['dayAheadPrices'].rolling(14*24).mean().shift(24)
     #     data['rolling_std_2weekly_price'] = data['dayAheadPrices'].rolling(14*24).std().shift(24)
     #     data['rolling_mean_monthly_price'] = data['dayAheadPrices'].rolling(30*24).mean().shift(24)
@@ -102,39 +101,39 @@ def create_features(data):
 
 
 # (df["dayAheadPrices"] < mean-(n-.2)*std) | 
-def seperate_spikes(df, n):
+def seperate_spikes(df, n, target):
     spike_df = pd.DataFrame()
     spikelen = 1
     while spikelen != 0:
-        mean = df["dayAheadPrices"].mean()
-        std = df["dayAheadPrices"].std()
-        spikes = df[(df["dayAheadPrices"] < mean - (n - .2) * std) | (df["dayAheadPrices"] > mean + (n - .2) * std)]
+        mean = df[target].mean()
+        std = df[target].std()
+        spikes = df[(df[target] < mean - (n - .2) * std) | (df[target] > mean + (n - .2) * std)]
         spike_df = pd.concat([spikes, spike_df])
         spikelen = len(spikes)
         df = df.drop(spikes.index)
     return spike_df
 
 
-def seperate_upper_spikes(df, n):
+def seperate_upper_spikes(df, n, target):
     upper_spike_df = pd.DataFrame()
     spikelen = 1
     while spikelen != 0:
-        mean = df["dayAheadPrices"].mean()
-        std = df["dayAheadPrices"].std()
-        upper_spikes = df[(df["dayAheadPrices"] > mean + (n - .2) * std)]
+        mean = df[target].mean()
+        std = df[target].std()
+        upper_spikes = df[(df[target] > mean + (n - .2) * std)]
         upper_spike_df = pd.concat([upper_spikes, upper_spike_df])
         spikelen = len(upper_spikes)
         df = df.drop(upper_spikes.index)
     return upper_spike_df
 
 
-def seperate_lower_spikes(df, n):
+def seperate_lower_spikes(df, n, target):
     lower_spike_df = pd.DataFrame()
     spikelen = 1
     while spikelen != 0:
-        mean = df["dayAheadPrices"].mean()
-        std = df["dayAheadPrices"].std()
-        lower_spikes = df[(df["dayAheadPrices"] < mean - (n - .2) * std)]
+        mean = df[target].mean()
+        std = df[target].std()
+        lower_spikes = df[(df[target] < mean - (n - .2) * std)]
         lower_spike_df = pd.concat([lower_spikes, lower_spike_df])
         spikelen = len(lower_spikes)
         df = df.drop(lower_spikes.index)
@@ -145,38 +144,38 @@ def seperate_lower_spikes(df, n):
 
 
 ### iterate over data, classify as a spike if data is over the range: (mean-n*std, mean+n*std)
-def process_spikes(data, n, period):
+def process_spikes(data, n, period, target):
     spikelen = 21
     spikes = pd.DataFrame()
     periods = list(range(0, len(data), period * 24))
     for i in range(len(periods)):
         if i != len(periods) - 1:
             df = data.iloc[periods[i]: periods[i + 1]]
-            spike_df = seperate_spikes(df, n)
+            spike_df = seperate_spikes(df, n, target)
             spikes = pd.concat([spikes, spike_df])
     return spikes
 
 
-def process_lower_spikes(data, n, period):
+def process_lower_spikes(data, n, period, target):
     spikelen = 21
     lower_spikes = pd.DataFrame()
     periods = list(range(0, len(data), period * 24))
     for i in range(len(periods)):
         if i != len(periods) - 1:
             df = data.iloc[periods[i]: periods[i + 1]]
-            lower_spike_df = seperate_lower_spikes(df, n)
+            lower_spike_df = seperate_lower_spikes(df, n, target)
             lower_spikes = pd.concat([lower_spikes, lower_spike_df])
     return lower_spikes
 
 
-def process_upper_spikes(data, n, period):
+def process_upper_spikes(data, n, period, target):
     spikelen = 21
     upper_spikes = pd.DataFrame()
     periods = list(range(0, len(data), period * 24))
     for i in range(len(periods)):
         if i != len(periods) - 1:
             df = data.iloc[periods[i]: periods[i + 1]]
-            upper_spike_df = seperate_upper_spikes(df, n)
+            upper_spike_df = seperate_upper_spikes(df, n, target)
             upper_spikes = pd.concat([upper_spikes, upper_spike_df])
     return upper_spikes
 
@@ -249,6 +248,10 @@ def create_nextDay(data):
         next_day[i + pd.Timedelta(days=1)] = [0 for x in data.columns]
         next_day[i + pd.Timedelta(days=1)][0] = i + pd.Timedelta(days=1)
     data = pd.concat([data, pd.DataFrame(next_day.values(), columns=data.columns)])
+    # print(data[:-24])
+    # data['date'] = data['date'].apply(lambda x: str(x)[:-9])
+    data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%dT%H:%M:%S', )
+    # print(data[:-24])
     return data
 
 
@@ -258,7 +261,6 @@ def create_nextDay(data):
 def process_date(data):
     #     data['date'] = data['date'].apply(lambda x: str(x)[:-6])
     #     data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%dT%H:%M:%S')
-    print(data)
     data['year'] = data['date'].dt.year
     data['month'] = data['date'].dt.month
     data['day'] = data['date'].dt.day
@@ -272,103 +274,106 @@ def process_date(data):
 
 # In[134]:
 
-def preprocess_no_feature(startDate, endDate):
-    day_ahead = read_dayAhead(startDate=startDate, endDate=endDate)
-    # if pd.to_datetime(endDate) <= datetime.date.today():
-    #     data = read_consumption_plan(startDate=startDate, endDate=endDate)
-    #     data = data[data['lep'].notna()]
-    #     total_planned_gen = read_total_planned_gen(startDate=startDate, endDate=endDate)
-    #
-    #     #     data = pd.merge(data, read_total_planned_gen, left_on =['date'], right_on=["date"], how='outer')
-    #     data["dayAheadPrices"] = day_ahead[1]
-    #     data["production"] = pd.to_numeric(total_planned_gen["dpp"])
-    #     data["consumption"] = pd.to_numeric(data["lep"])
-    #     data.drop('lep', axis=1, inplace=True)
-    # else:
-    # data = pd.DataFrame(day_ahead, columns=["date", "dayAheadPrices"])
-    data = pd.DataFrame(day_ahead[0], columns=['date'])
-    data["dayAheadPrices"] = day_ahead[1]
-    print(data)
+def preprocess_no_feature(startDate, endDate, target):
+    if target == "dayAheadPrices":
+        day_ahead = read_dayAhead(startDate=startDate, endDate=endDate)
+        data = pd.DataFrame(day_ahead[0], columns=['date'])
+        data["dayAheadPrices"] = day_ahead[1]
+    elif target == "consumption":
+        data = read_real_time_consumption(startDate=startDate, endDate=endDate)
+        data["consumption"] = data["consumption"].astype('float')
     if data.shape[0] < 24:
-        print(pd.date_range(start=pd.to_datetime(startDate),
-                            end=(pd.to_datetime(endDate) + pd.DateOffset(days=int(1))) - pd.DateOffset(hours=1),
-                            freq='H').tolist(), "empty")
         data = pd.DataFrame(pd.date_range(start=pd.to_datetime(startDate),
                                           end=(pd.to_datetime(endDate) + pd.DateOffset(days=int(1))) - pd.DateOffset(
                                               hours=1),
                                           freq='H').tolist(), columns=['date'])
-    # data['date'] = data['date'].apply(lambda x: str(x)[:-9])
-    data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%dT%H:%M:%S', )
-    if pd.to_datetime(endDate, format='%Y-%m-%dT%H:%M:%S') not in data["date"].to_list():
+    data['date'] = data['date'].apply(lambda x: str(x)[:-6])
+    data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%dT%H:%M:%S')
+    while str(endDate) not in data["date"].apply(lambda x: str(x)[:10]).tolist():
         data = create_nextDay(data)
     data = process_date(data)
     return data
 
 
-def preprocess_features(data, spike_interval=30):
-    spikes = process_spikes(data, 2, spike_interval)
-    upper_spikes = process_upper_spikes(data, 2, spike_interval)
-    lower_spikes = process_lower_spikes(data, 2, spike_interval)
+def preprocess_features(data, target, spike_interval=30):
+    spikes = process_spikes(data, 2, spike_interval, target)
+    upper_spikes = process_upper_spikes(data, 2, spike_interval, target)
+    lower_spikes = process_lower_spikes(data, 2, spike_interval, target)
     data["upper"] = 0
     data["lower"] = 0
     data["isSpike"] = 0
     data.loc[spikes.index, "isSpike"] = 1
     data.loc[upper_spikes.index, "upper"] = 1
     data.loc[lower_spikes.index, "lower"] = 1
-    data = create_features(data)
+    data = create_features(data, target)
+    cls = data.filter(regex='^t').columns
+    for c in cls:
+        data[c] = data[c].fillna(data.groupby(['dayofweek_num', 'month', 'year', 'Hour'])[c].transform('mean'))
     # data = data.set_index('date')
     return data
 
 
-def prep_from_scratch(startDate, endDate):
-    data = read_consumption_plan(startDate=startDate, endDate=endDate)
-    data = data[data['lep'].notna()]
-    total_planned_gen = read_total_planned_gen(startDate=startDate, endDate=endDate)
-    day_ahead = read_dayAhead(startDate=startDate, endDate=endDate)
-    #     data = pd.merge(data, read_total_planned_gen, left_on =['date'], right_on=["date"], how='outer')
-    data["dayAheadPrices"] = day_ahead[1]
-    data["production"] = pd.to_numeric(total_planned_gen["dpp"])
-    data["consumption"] = pd.to_numeric(data["lep"])
-    data.drop('lep', axis=1, inplace=True)
-    data['date'] = data['date'].apply(lambda x: str(x)[:-6])
-    data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%dT%H:%M:%S')
-    if pd.to_datetime(endDate, format='%Y-%m-%dT%H:%M:%S') not in data["date"].to_list():
-        data = create_nextDay(data)
-    data = process_date(data)
-    spikes = process_spikes(data, 2, 30)
-    upper_spikes = process_upper_spikes(data, 2, 30)
-    lower_spikes = process_lower_spikes(data, 2, 30)
-    data["upper"] = 0
-    data["lower"] = 0
-    data["isSpike"] = 0
-    data.loc[spikes.index, "isSpike"] = 1
-    data.loc[upper_spikes.index, "upper"] = 1
-    data.loc[lower_spikes.index, "lower"] = 1
-    data = create_features(data)
-    data = data.set_index('date')
-    return data
+# def prep_from_scratch(startDate, endDate):
+#     data = read_consumption_plan(startDate=startDate, endDate=endDate)
+#     data = data[data['lep'].notna()]
+#     total_planned_gen = read_total_planned_gen(startDate=startDate, endDate=endDate)
+#     day_ahead = read_dayAhead(startDate=startDate, endDate=endDate)
+#     #     data = pd.merge(data, read_total_planned_gen, left_on =['date'], right_on=["date"], how='outer')
+#     data["dayAheadPrices"] = day_ahead[1]
+#     data["production"] = pd.to_numeric(total_planned_gen["dpp"])
+#     data["consumption"] = pd.to_numeric(data["lep"])
+#     data.drop('lep', axis=1, inplace=True)
+#     data['date'] = data['date'].apply(lambda x: str(x)[:-6])
+#     data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%dT%H:%M:%S')
+#     if pd.to_datetime(endDate, format='%Y-%m-%dT%H:%M:%S') not in data["date"].to_list():
+#         data = create_nextDay(data)
+#     data = process_date(data)
+#     spikes = process_spikes(data, 2, 30)
+#     upper_spikes = process_upper_spikes(data, 2, 30)
+#     lower_spikes = process_lower_spikes(data, 2, 30)
+#     data["upper"] = 0
+#     data["lower"] = 0
+#     data["isSpike"] = 0
+#     data.loc[spikes.index, "isSpike"] = 1
+#     data.loc[upper_spikes.index, "upper"] = 1
+#     data.loc[lower_spikes.index, "lower"] = 1
+#     data = create_features(data)
+#     data = data.set_index('date')
+#     return data
 
 
-def preprocess_final(startDate='2016-01-01', endDate='2020-12-31'):
-    if os.path.exists("../API/main_data.csv"):
-        data = pd.read_csv("../API/main_data.csv")
+def preprocess_final(startDate='2016-01-01', endDate='2020-12-31', target="dayAheadPrices"):
+    if os.path.exists("../API/" + target + "_data.csv"):
+        data = pd.read_csv("../API/" + target + "_data.csv")
         data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%d')
+        # print(data["date"].iloc[-1])
+        # print("prep_final before catchup")
+        # print(data)
         if pd.to_datetime(data.iloc[-1]["date"]) < pd.to_datetime(endDate):
             print("catching up to date")
-            data = catch_up_2_date(data, endDate)
+            data = catch_up_2_date(data, endDate, target)
+        # print("prep_final after catchup")
+        # print(data)
     else:
         print("Fetching and processing the data...")
         data = preprocess_no_feature("2011-12-01",
                                      str(datetime.date.today()) if int(datetime.datetime.now().hour) < 13 else str(
-                                         datetime.date.today() + datetime.timedelta(days=1)))
-        if 'date' in data.columns:
-            data = data.set_index('date')
+                                         datetime.date.today() + datetime.timedelta(days=1)), target=target)
+        print("prep_no_feat else")
+        print(data)
         data = reduce_mem_usage(data)
-        data.to_csv("../API/main_data.csv")
+        data.to_csv("../API/" + target + "_data.csv", index=False)
+        if pd.to_datetime(data.iloc[-1]["date"]) < pd.to_datetime(endDate):
+            print("catching up to date")
+            data = catch_up_2_date(data, endDate, target)
+        # if 'date' in data.columns:
+        #     data = data.set_index('date')
     if 'date' in data.columns:
         data = data.set_index('date')
     data = data[startDate: endDate]
-    data = preprocess_features(data)
+    data = preprocess_features(data, target=target)
+    data.drop('index', axis=1, inplace=True, errors='ignore')
+    data.to_csv('wassa.csv', index=False)
     print("Reducing memory usage...")
     data = reduce_mem_usage(data)
     data.drop(['fueloil', 'gasOil', 'blackCoal', 'lignite', 'geothermal', 'river',
@@ -378,34 +383,20 @@ def preprocess_final(startDate='2016-01-01', endDate='2020-12-31'):
     data["target"] = np.where(data["upper"] == 1, 1,
                               np.where(data["lower"] == 1, -1, 0))
     data.drop(["upper", "lower"], axis=1, inplace=True)
-    # data = data.set_index('date')
     print("Data Processed.")
-
-    # data.to_csv(startDate + "_" + endDate + ".csv")
     return data
 
 
-# In[12]:
-
-
-def add_on_top(data, n):
-    startDate = str(data.iloc[-1]["date"] + pd.Timedelta(days=1))[:10]
-    endDate = str(data.iloc[-1]["date"] + pd.Timedelta(days=n))[:10]
-    topping = prep_from_scratch(startDate, endDate)
-    data = pd.concat([data, topping])
-    return data
-
-
-def catch_up_2_date(data, catchDate):
+def catch_up_2_date(data, catchDate, target):
     startDate = str(pd.to_datetime(data.iloc[-1]["date"]) + pd.Timedelta(days=1))[:10]
     endDate = catchDate
     # if pd.to_datetime(endDate) <= datetime.date.today() or (pd.to_datetime(endDate) == (
     #         pd.to_datetime(datetime.date.today()) + pd.Timedelta(days=1)) and datetime.datetime.now().hour > 13):
-    topping = preprocess_no_feature(startDate, endDate).reset_index()
+    topping = preprocess_no_feature(startDate, endDate, target).reset_index()
     data = pd.concat([data, topping])
     data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%d')
     data = data.set_index('date')
     # data.reset_index()
-    data.to_csv('main_data.csv')
+    # data.to_csv('main_data.csv')
     return data
     # return data

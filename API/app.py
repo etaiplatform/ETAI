@@ -61,17 +61,20 @@ def predict():
     truth = []
     plotpath = ""
     if arc == "DEF":
-        predictions, plotpath, truth = LGBRegression.start(startDate, endDate, days, plot=plot)
+        predictions, plotpath, truth = LGBRegression.start(startDate, endDate, days, plot=plot, target="consumption")
     elif arc == "BIN1":
         predictions, truth, plotpath, predictions_clf = RunIterNUL.run_binary_1_iter(startDate, endDate, days,
-                                                                                     plot=plot)
+                                                                                     plot=plot, target="consumption")
     elif arc == "NUL1":
-        predictions, truth, plotpath, predictions_clf = RunIterNUL.run_nul_1_iter(startDate, endDate, days, plot=plot)
+        predictions, truth, plotpath, predictions_clf = RunIterNUL.run_nul_1_iter(startDate, endDate, days, plot=plot,
+                                                                                  target="consumption")
     elif arc == "NUL3":
-        predictions, truth, plotpath, predictions_clf = RunIterNUL.run_nul_3_iter(startDate, endDate, days, plot=plot)
+        predictions, truth, plotpath, predictions_clf = RunIterNUL.run_nul_3_iter(startDate, endDate, days, plot=plot,
+                                                                                  target="consumption")
         predictions = np.array(predictions["preds"].to_list())
     elif arc == "DMDNUL1":
-        predictions, truth, plotpath, predictions_clf = RunIterNUL.run_dimdik(startDate, endDate, days, plot=plot)
+        predictions, truth, plotpath, predictions_clf = RunIterNUL.run_dimdik(startDate, endDate, days, plot=plot,
+                                                                              target="consumption")
 
     date_range = pd.date_range(start=pd.to_datetime(endDate) - pd.DateOffset(days=int(days) - 1),
                                end=pd.to_datetime(

@@ -24,8 +24,8 @@ months = ['2020-07-15', '2020-08-15', '2020-09-15', '2020-10-15', '2020-11-15', 
           '2021-01-15', '2021-02-15', '2021-03-15', '2021-04-15', '2021-05-15', '2021-06-15']
 # months = ['2021-06-15']
 n_days = 30
-# models = ['DEF', 'BIN1', 'NUL1', 'NUL3', 'DMDNUL1']
-models = ['NUL1']
+models = ['DEF', 'BIN1', 'NUL3', 'NUL1', 'DMDNUL1']
+# models = ['DMDNUL1']
 # results_df = pd.DataFrame()
 data = defaultdict(list)
 for end_date in months:
@@ -44,12 +44,4 @@ for end_date in months:
         data["model"].append(model)
         data["end_date"].append(end_date)
 results_df = pd.DataFrame(data)
-
-# results_df["days"] = n_days
-# results_df["end_date"] = end_date
-# results_df["model"] = model
-# results_df["mae"] = mae
-# results_df["mape"] = mape
-# results_df["rmse"] = rmse
-# results_df["smape"] = smaperes
-results_df.to_csv('results3.csv', index=False)
+results_df.to_csv('dmdnulnew.csv', index=False)
