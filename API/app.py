@@ -31,6 +31,9 @@ def get_preprocessed_data():
     startDate = request.args.get('startDate')
     endDate = request.args.get('endDate')
     download = request.args.get('download')
+    target = request.args.get('target')
+    if target == "price":
+        target = "dayAheadPrices"
     download = download == "True"
     data = preprocess_final(startDate, endDate)
     if download:
@@ -57,24 +60,30 @@ def predict():
     days = request.args.get('days')
     arc = request.args.get('model')
     plot = request.args.get('plot')
+    t = request.args.get('target')
+    # target = None
+    if str(t) == "price":
+        target = "dayAheadPrices"
+    else:
+        target = str(t)
     predictions = []
     truth = []
     plotpath = ""
     if arc == "DEF":
-        predictions, plotpath, truth = LGBRegression.start(startDate, endDate, days, plot=plot, target="consumption")
+        predictions, plotpath, truth = LGBRegression.start(startDate, endDate, days, plot=plot, target=target)
     elif arc == "BIN1":
         predictions, truth, plotpath, predictions_clf = RunIterNUL.run_binary_1_iter(startDate, endDate, days,
-                                                                                     plot=plot, target="consumption")
+                                                                                     plot=plot, target=target)
     elif arc == "NUL1":
         predictions, truth, plotpath, predictions_clf = RunIterNUL.run_nul_1_iter(startDate, endDate, days, plot=plot,
-                                                                                  target="consumption")
+                                                                                  target=target)
     elif arc == "NUL3":
         predictions, truth, plotpath, predictions_clf = RunIterNUL.run_nul_3_iter(startDate, endDate, days, plot=plot,
-                                                                                  target="consumption")
+                                                                                  target=target)
         predictions = np.array(predictions["preds"].to_list())
     elif arc == "DMDNUL1":
         predictions, truth, plotpath, predictions_clf = RunIterNUL.run_dimdik(startDate, endDate, days, plot=plot,
-                                                                              target="consumption")
+                                                                              target=target)
 
     date_range = pd.date_range(start=pd.to_datetime(endDate) - pd.DateOffset(days=int(days) - 1),
                                end=pd.to_datetime(
