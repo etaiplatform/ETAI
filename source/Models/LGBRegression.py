@@ -5,10 +5,6 @@
 
 from sklearn.metrics import mean_absolute_error
 
-# In[3]:
-
-
-# import Preprocessing
 import pandas as pd
 import numpy as np
 import gc
@@ -18,8 +14,8 @@ import lightgbm as lgb
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
 
-from source.Preprocessing import preprocess_final
-from source.utils_cv import PurgedGroupTimeSeriesSplit
+from ETAI.source.Preprocessing import preprocess_final
+from ETAI.source.utils_cv import PurgedGroupTimeSeriesSplit
 
 
 def smape(A, F):
@@ -33,14 +29,6 @@ def mean_absolute_percentage_error(y_true, y_pred):
     return np.nanmean(np.abs((y_true - y_pred) / y_true)) * 100
 
 
-# ### Gradually Decrease prediction size
-
-# In[37]:
-
-
-# In[34]:
-
-
 params = {
     'objective': 'quantile',
     'random_state': 0,
@@ -49,10 +37,6 @@ params = {
     'verbose': 0,
     'force_col_wise': True
 }
-
-
-# In[ ]:
-
 
 def predict_lastn_reg(model, days_pred, data, target):
     X = data.drop(target, axis=1)
@@ -187,13 +171,7 @@ def start_after_multi(data, preds, startDate='2016-01-01', endDate='2020-12-31',
     oof_preds = predict_lastn_reg(model, int(n_days) + 1, data, target)
     test_res = data[target].iloc[-24 * int(n_days):].to_list()
     pred_res = oof_preds[-24 * int(n_days):]
-    # if np.isnan(test_res).all():
     test_res = [-1 if np.isnan(i) else i for i in test_res]
-    # print([np.isnan(i) for i in range(le)])
-    # print(np.nan, type(np.nan))
-    # print(np.where(test_res == np.nan, -1, test_res))
-    # print(test_res)
-    # print(pred_res)
     print("MAE of the last predicted batch for multi: ", mean_absolute_error(test_res, pred_res))
     print("SMAPE of the last predicted batch for multi: ", smape(test_res, pred_res))
     print("MAPE of the last predicted batch for multi: ", mean_absolute_percentage_error(test_res, pred_res))

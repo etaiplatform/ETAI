@@ -1,10 +1,9 @@
 import numpy as np
 from flask import Flask, request, jsonify, Response
 import pandas as pd
-from source import RunIterNUL
-from source.Models import LGBRegression
-
-from source.Preprocessing import preprocess_final
+from ETAI.source import RunIterNUL
+from ETAI.source.Models import LGBRegression
+from ETAI.source.Preprocessing import preprocess_final
 
 app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
@@ -66,6 +65,8 @@ def predict():
         target = "dayAheadPrices"
     else:
         target = str(t)
+    # if target == "production":
+    #     return jsonify({"error": "production is not stable, therefore not available"})
     predictions = []
     truth = []
     plotpath = ""

@@ -1,7 +1,7 @@
 import numpy as np
 from flask import Flask, request, render_template
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from API.Requests import predict_api
+from ETAI.API.Requests import predict_api
 
 app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
@@ -32,7 +32,8 @@ def predict():
     endDate = params[1]
     days = params[2]
     arc = params[3]
-    preds, truth, plotpath = predict_api(startDate, endDate, days, arc, plot=True)
+    target = params[4]
+    preds, truth, plotpath = predict_api(startDate, endDate, days, arc, plot=True, target=target)
     predictions_list = preds["predictions"].tolist()
     return render_template('index.html', path="../static/" + plotpath.split('/')[-1],
                            mae=mean_absolute_error(truth, predictions_list),

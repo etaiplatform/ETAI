@@ -15,10 +15,12 @@ def get_prep_data(startDate, endDate, download):
     return res
 
 
-def predict_api(startDate, endDate, days, model, plot):
+def predict_api(startDate, endDate, days, model, plot, target):
     url = "predict"
-    req = "{}/{}?startDate={}&endDate={}&days={}&model={}&plot={}".format(host, url, startDate, endDate, days, model,
-                                                                          plot)
+    req = "{}/{}?startDate={}&endDate={}&days={}&model={}&plot={}&target={}".format(host, url, startDate, endDate, days,
+                                                                                    model,
+                                                                                    plot, target)
+    print(req)
     res = requests.request("get", req)
     json_data = json.loads(res.text.encode('utf8'))
     if plot == "True" or plot == True:

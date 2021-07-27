@@ -5,10 +5,12 @@ import dash_html_components as html
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import date
-
+import datetime
+# from flask_caching import Cache
+# import os
 from sklearn.metrics import mean_absolute_percentage_error
 
-from API.Requests import get_prep_data, predict_api
+from ETAI.API.Requests import get_prep_data, predict_api
 
 df = get_prep_data("2018-01-01", "2021-06-05", "False")
 preds = None
@@ -20,7 +22,13 @@ app = dash.Dash(
     suppress_callback_exceptions=True
 )
 server = app.server
-
+# CACHE_CONFIG = {
+#     # try 'filesystem' if you don't want to setup redis
+#     'CACHE_TYPE': 'redis',
+#     'CACHE_REDIS_URL': os.environ.get('REDIS_URL', 'redis://localhost:6379')
+# }
+# cache = Cache()
+# cache.init_app(app.server, config=CACHE_CONFIG)
 """Homepage"""
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
@@ -118,9 +126,10 @@ nyiso_layout = html.Div([
             dcc.DatePickerRange(
                 id='my-date-picker-range',
                 min_date_allowed=date(2016, 1, 1),
-                max_date_allowed=date(2021, 4, 24),
+                max_date_allowed=date(2022, 1, 1),
                 start_date=date(2016, 1, 1),
-                end_date=date.today()
+                end_date=date.today(),
+                initial_visible_month=date.today()
             ), width=3
         ),
         dbc.Col(
@@ -132,6 +141,17 @@ nyiso_layout = html.Div([
                     {'label': 'Spike-Normal 1 Model', 'value': 'BIN1'},
                     {'label': 'Normal 1 model', 'value': 'DEF'},
                     {'label': 'DMDNUL1', 'value': 'DMDNUL1'},
+                ],
+                multi=False,
+            ), width=2
+        ),
+        dbc.Col(
+            dcc.Dropdown(
+                id='target-select-dropdown',
+                options=[
+                    {'label': 'price', 'value': 'price'},
+                    {'label': 'consumption', 'value': 'consumption'},
+                    {'label': 'production', 'value': 'production'},
                 ],
                 multi=False,
             ), width=2
@@ -255,9 +275,23 @@ nyiso_layout = html.Div([
                 ), width=4),
         ]
     ),
+    # dcc.Store(id='signal')
 ])
 
 
+#
+# @cache.memoize()
+# def global_store(value):
+#     # simulate expensive query
+#     predictions, truth = predict_api("2016-01-01", datetime.datetime.today().date(), 2, "NUL1", plot=False, target="price")
+#     print('Computing value with {}'.format(value))
+#     return [predictions, truth]
+#
+# @app.callback(dash.dependencies.Output('signal', 'data'), dash.dependencies.Input('dropdown', 'value'))
+# def get_todays_predictions(value):
+#     # compute value and send a signal when done
+#     global_store(value)
+#     return value
 # @app.callback(dash.dependencies.Output('nyiso-content', 'children'),
 #               [dash.dependencies.Input('nyiso-button', 'value')])
 
@@ -265,20 +299,27 @@ nyiso_layout = html.Div([
     dash.dependencies.Output('model-predict-metric', 'children'),
     [dash.dependencies.Input('model-train-button', 'n_clicks')],
     state=[
+        dash.dependencies.State('target-select-dropdown', 'value'),
         dash.dependencies.State('model-select-dropdown', 'value'),
         dash.dependencies.State('my-date-picker-range', 'start_date'),
         dash.dependencies.State('my-date-picker-range', 'end_date'),
         dash.dependencies.State('model-predict-days', 'value'),
     ]
 )
-def run_model(n_clicks, model_select, start_date, end_date, days):
+def run_model(n_clicks, target_select, model_select, start_date, end_date, days):
     global df
     global preds
     # fig = go.Figure()
     # truth = None
     # predictions = pd.DataFrame()
     # predictions.to_csv(start_date + 'preds' + start_date + str(days) + '.csv', index=False)
-    _, truth = predict_api(start_date, end_date, days, model_select, plot=False)
+    if not n_clicks:
+        return '''Waiting for the model to be trained'''
+    if not days:
+        days = 1
+        model_select = "NUL1"
+        target_select = "price"
+    _, truth = predict_api(start_date, end_date, days, model_select, plot=False, target=target_select)
     preds = _
     del _
     # predictions = pd.DataFrame(predictions, columns=["predictions"])
@@ -313,7 +354,12 @@ def plot_nyiso_load_(value, n_clicks, n_days):
     # if n_days and df.empty else[]
     # if n_days and preds else[]
     # if n_days and preds else[]
+    print(n_days, "???")
+    global preds
+
     fig = go.Figure()
+    if not n_days:
+        return fig
     if 'Actual' in value:
         fig.add_trace(go.Scatter(
             x=list(range(len(df.iloc[-int(n_days) * 24:]['dayAheadPrices']))),

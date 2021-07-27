@@ -1,4 +1,4 @@
-from API.Requests import predict_api
+from ETAI.API.Requests import predict_api
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import numpy as np
 from collections import defaultdict

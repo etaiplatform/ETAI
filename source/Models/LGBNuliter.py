@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[11]:
-
-
 import numpy as np
 import pandas as pd
 import gc
@@ -11,11 +8,8 @@ import lightgbm as lgb
 import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score, f1_score
 
-from source.Preprocessing import preprocess_final
-from source.utils_cv import PurgedGroupTimeSeriesSplit
-
-# In[12]:
-
+from ETAI.source.Preprocessing import preprocess_final
+from ETAI.source.utils_cv import PurgedGroupTimeSeriesSplit
 
 params = {
     'boosting_type': 'gbdt',
@@ -30,9 +24,6 @@ params = {
     "force_row_wise": True,
     #     "is_unbalance"               : True
 }
-
-
-# In[14]:
 
 
 def predict_lastn_clf(model, days_pred, data):
@@ -57,22 +48,12 @@ def predict_lastn_clf(model, days_pred, data):
     return oof_preds, oof_test
 
 
-# In[15]:
-
-
 def start_multi_clf(startDate='2016-01-01', endDate='2020-12-31', n_days=2):
     model = lgb.LGBMClassifier(**params)
-    # if os.path.exists(startDate + "_" + endDate + ".csv"):
-    #     data = pd.read_csv(startDate + "_" + endDate + ".csv")
-    #     data = data.set_index('date')
-    # else:
     data = preprocess_final(startDate, endDate)
     data = data.drop(['isSpike'], axis=1, errors='ignore')
     oof_preds, oof_test = predict_lastn_clf(model, int(n_days) + 1, data)
     return oof_preds[-24 * int(n_days):]
-
-
-# In[16]:
 
 
 def predict_lastn_reg(model, days_pred, data, startDate='2016-01-01', endDate='2020-12-31',
@@ -97,8 +78,6 @@ def predict_lastn_reg(model, days_pred, data, startDate='2016-01-01', endDate='2
             print("not fitting {}".format(x_train_kf.iloc[-1].name))
         y_test_kf = y[test_index]
         x_test_kf = X.iloc[test_index, :].copy()
-        # x_train_kf, x_test_kf = X.iloc[:test_index[0], :].copy(), X.iloc[test_index, :].copy()
-        # y_train_kf, y_test_kf = y[:test_index[0]], y[test_index]
         tocheck = list(set(pd.to_datetime(x_test_kf.reset_index()["date"]).dt.date.astype('str')))
         dates = [str(pd.to_datetime(endDate).date() - pd.Timedelta(days=i)) for i in range(days_pred)]
         if len([i for i in tocheck if i in dates]) == 0:

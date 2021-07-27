@@ -10,13 +10,8 @@ import gc
 import lightgbm as lgb
 
 from sklearn.metrics import accuracy_score, f1_score
-# from sklearn.model_selection import RandomizedSearchCV
-
-from source.Preprocessing import preprocess_final
-from source.utils_cv import PurgedGroupTimeSeriesSplit
-
-# In[96]:
-
+from ETAI.source.Preprocessing import preprocess_final
+from ETAI.source.utils_cv import PurgedGroupTimeSeriesSplit
 
 params = {
     'boosting_type': 'gbdt',
@@ -33,9 +28,6 @@ params = {
 }
 
 
-# In[98]:
-
-
 def predict_lastn_clf(model, days_pred, data):
     X = data.drop(['target'], axis=1, errors='ignore')
     y = data['target']
@@ -50,12 +42,8 @@ def predict_lastn_clf(model, days_pred, data):
     for i, (train_index, test_index) in enumerate(kf):
         x_train_kf, x_test_kf = X.iloc[:test_index[0], :].copy(), X.iloc[test_index, :].copy()
         y_train_kf, y_test_kf = y[:test_index[0]], y[test_index]
-        # print(x_test_kf)
-        # print(y_train_kf)
         model.fit(x_train_kf.drop(['target'], axis=1, errors='ignore'), y_train_kf)
-        #         model = lgb.train(params, lgb.Dataset(x_train_kf.drop('isSpike',axis=1, errors='ignore'), y_train_kf))
         preds = model.predict(x_test_kf.drop(['target'], axis=1, errors='ignore'))
-        #         preds = model.predict(x_test_kf.drop('isSpike',axis=1, errors='ignore'))
         oof_preds[24 * i: 24 * (i + 1)] = (preds)
         oof_test[24 * i: 24 * (i + 1)] = (y_test_kf)
     print("F1 score of the last predicted batch: ", f1_score(oof_test, oof_preds, average='macro'))
@@ -63,29 +51,9 @@ def predict_lastn_clf(model, days_pred, data):
     return oof_preds, oof_test
 
 
-# In[99]:
-
-
 def start_multi_clf(startDate='2016-01-01', endDate='2020-12-31', n_days=2, target="dayAheadPrices"):
-    # if optimize:
-    #     clf = RandomizedSearchCV(lgb.LGBMClassifier(), lgb_param_dist, random_state=1337, n_iter=opt_iters, )
-    #     clf.fit()
     model = lgb.LGBMClassifier(**params)
     data = preprocess_final(startDate, endDate, target=target)
     data = data.drop('isSpike', axis=1, errors='ignore')
     oof_preds, oof_test = predict_lastn_clf(model, int(n_days) + 1, data)
-    #     print(oof_preds[-24*int(n_days):])
-    #     print(oof_test[-24*int(n_days):])
-    #     for xc in list(range(0,24)):
-    #         plt.axvline(x=xc, label='line at x = {}'.format(xc))
-    #     plt.step(list(range(0,len(data["isSpike"].iloc[-24*int(n_days):].to_list()))), list(oof_preds[-24*int(n_days):]))
-    #     plt.step(list(range(0,len(data["isSpike"].iloc[-24*int(n_days):].to_list()))), data["isSpike"].iloc[-24*int(n_days):].to_list())
-    #     path = 'static/plot'+startDate+'_'+endDate+'_'+n_days+'.png'
-    #     plt.savefig(path)
-    #     plt.clf()
     return oof_preds[-24 * int(n_days):], data
-
-# In[94]:
-
-
-# oof_preds, oof_test = start_clf(startDate='2016-01-01', endDate='2021-03-08', n_days=365)

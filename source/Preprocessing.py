@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
 import os
 import datetime
 import pandas as pd
@@ -9,9 +8,6 @@ import numpy as np
 from transparency_epias.production import productionClient  # üretim
 from transparency_epias.consumption import consumptionClient  # tüketim
 from transparency_epias.markets import dayaheadClient  # gün öncesi fiyatlar
-
-
-# In[3]:
 
 
 def reduce_mem_usage(df):
@@ -48,9 +44,6 @@ def reduce_mem_usage(df):
     print('Decreased by {:.1f}%'.format(100 * (start_mem - end_mem) / start_mem))
 
     return df
-
-
-# In[4]:
 
 
 def create_features(data, target):
@@ -97,9 +90,6 @@ def create_features(data, target):
     return data
 
 
-# In[5]:
-
-
 # (df["dayAheadPrices"] < mean-(n-.2)*std) | 
 def seperate_spikes(df, n, target):
     spike_df = pd.DataFrame()
@@ -140,9 +130,6 @@ def seperate_lower_spikes(df, n, target):
     return lower_spike_df
 
 
-# In[6]:
-
-
 ### iterate over data, classify as a spike if data is over the range: (mean-n*std, mean+n*std)
 def process_spikes(data, n, period, target):
     spikelen = 21
@@ -180,9 +167,6 @@ def process_upper_spikes(data, n, period, target):
     return upper_spikes
 
 
-# In[7]:
-
-
 STARTDATE = "2016-01-01"
 ENDDATE = "2020-12-31"
 
@@ -194,9 +178,6 @@ def read_real_time_consumption(startDate, endDate):
     return data
 
 
-# In[8]:
-
-
 def read_consumption_plan(startDate, endDate):
     data = consumptionClient.consumption.consumption_forecast(startDate=startDate, endDate=endDate)
     data = pd.DataFrame(data)
@@ -204,16 +185,28 @@ def read_consumption_plan(startDate, endDate):
     return data
 
 
-# In[9]:
+def divide_dates(start, end, intv):
+    from datetime import datetime
+    start = datetime.strptime(start, "%Y-%m-%d")
+    end = datetime.strptime(end, "%Y-%m-%d")
+    diff = (end - start) / intv
+    for i in range(intv):
+        yield (start + diff * i).strftime("%Y-%m-%d")
+    yield end.strftime("%Y-%m-%d")
 
 
 def read_real_time_gen(startDate, endDate):
-    real_time_gen = productionClient.production.real_time_gen(startDate=startDate, endDate=endDate)
-    real_time_gen = pd.DataFrame(real_time_gen)
-    return real_time_gen
-
-
-# In[10]:
+    dates = list(divide_dates(startDate, endDate, int(pd.to_datetime(endDate).year - pd.to_datetime(startDate).year)))
+    dfs = []
+    for i in range(len(dates) - 1):
+        print(dates[i], dates[i + 1])
+        real_time_gen = productionClient.production.real_time_gen(startDate=dates[i], endDate=dates[i + 1])
+        real_time_gen = pd.DataFrame(real_time_gen)
+        print(real_time_gen)
+        real_time_gen = real_time_gen[["date", "total"]]
+        real_time_gen.columns = ["date", "production"]
+        dfs.append(real_time_gen)
+    return pd.concat(dfs)
 
 
 def read_planned_gen(startDate, endDate):
@@ -222,24 +215,15 @@ def read_planned_gen(startDate, endDate):
     return planned_gen
 
 
-# In[11]:
-
-
 def read_total_planned_gen(startDate, endDate):
     planned_total_gen = productionClient.production.daily_production_plan_total(startDate=startDate, endDate=endDate)
     planned_total_gen = pd.DataFrame(planned_total_gen)
     return planned_total_gen
 
 
-# In[12]:
-
-
 def read_dayAhead(startDate, endDate):
     gün_öncesi_fiyatlar = dayaheadClient.dayahead.mcp(startDate=startDate, endDate=endDate)
     return gün_öncesi_fiyatlar
-
-
-# In[106]:
 
 
 def create_nextDay(data):
@@ -248,14 +232,9 @@ def create_nextDay(data):
         next_day[i + pd.Timedelta(days=1)] = [0 for x in data.columns]
         next_day[i + pd.Timedelta(days=1)][0] = i + pd.Timedelta(days=1)
     data = pd.concat([data, pd.DataFrame(next_day.values(), columns=data.columns)])
-    # print(data[:-24])
     # data['date'] = data['date'].apply(lambda x: str(x)[:-9])
     data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%dT%H:%M:%S', )
-    # print(data[:-24])
     return data
-
-
-# In[109]:
 
 
 def process_date(data):
@@ -272,8 +251,6 @@ def process_date(data):
     return data
 
 
-# In[134]:
-
 def preprocess_no_feature(startDate, endDate, target):
     if target == "dayAheadPrices":
         day_ahead = read_dayAhead(startDate=startDate, endDate=endDate)
@@ -282,6 +259,9 @@ def preprocess_no_feature(startDate, endDate, target):
     elif target == "consumption":
         data = read_real_time_consumption(startDate=startDate, endDate=endDate)
         data["consumption"] = data["consumption"].astype('float')
+    elif target == "production":
+        data = read_real_time_gen(startDate=startDate, endDate=endDate)
+        data["production"] = data["production"].astype('float')
     if data.shape[0] < 24:
         data = pd.DataFrame(pd.date_range(start=pd.to_datetime(startDate),
                                           end=(pd.to_datetime(endDate) + pd.DateOffset(days=int(1))) - pd.DateOffset(
@@ -346,17 +326,16 @@ def preprocess_final(startDate='2016-01-01', endDate='2020-12-31', target="dayAh
     if os.path.exists("../API/" + target + "_data.csv"):
         data = pd.read_csv("../API/" + target + "_data.csv")
         data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%d')
-        # print(data["date"].iloc[-1])
-        # print("prep_final before catchup")
-        # print(data)
         if pd.to_datetime(data.iloc[-1]["date"]) < pd.to_datetime(endDate):
             print("catching up to date")
             data = catch_up_2_date(data, endDate, target)
-        # print("prep_final after catchup")
-        # print(data)
     else:
         print("Fetching and processing the data...")
-        data = preprocess_no_feature("2011-12-01",
+        if target != "production":
+            stdate = "2011-12-01"
+        else:
+            stdate = "2013-05-01"
+        data = preprocess_no_feature(stdate,
                                      str(datetime.date.today()) if int(datetime.datetime.now().hour) < 13 else str(
                                          datetime.date.today() + datetime.timedelta(days=1)), target=target)
         print("prep_no_feat else")
@@ -366,14 +345,11 @@ def preprocess_final(startDate='2016-01-01', endDate='2020-12-31', target="dayAh
         if pd.to_datetime(data.iloc[-1]["date"]) < pd.to_datetime(endDate):
             print("catching up to date")
             data = catch_up_2_date(data, endDate, target)
-        # if 'date' in data.columns:
-        #     data = data.set_index('date')
     if 'date' in data.columns:
         data = data.set_index('date')
     data = data[startDate: endDate]
     data = preprocess_features(data, target=target)
     data.drop('index', axis=1, inplace=True, errors='ignore')
-    data.to_csv('wassa.csv', index=False)
     print("Reducing memory usage...")
     data = reduce_mem_usage(data)
     data.drop(['fueloil', 'gasOil', 'blackCoal', 'lignite', 'geothermal', 'river',
@@ -396,7 +372,4 @@ def catch_up_2_date(data, catchDate, target):
     data = pd.concat([data, topping])
     data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%d')
     data = data.set_index('date')
-    # data.reset_index()
-    # data.to_csv('main_data.csv')
     return data
-    # return data
