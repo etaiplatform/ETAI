@@ -1,0 +1,7 @@
+LICENSE
+README.md
+setup.py
+ETAI.egg-info/PKG-INFO
+ETAI.egg-info/SOURCES.txt
+ETAI.egg-info/dependency_links.txt
+ETAI.egg-info/top_level.txt

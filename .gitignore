@@ -1,0 +1,11 @@
+venv
+ETAI/flaskApp/static
+ETAI/DashApp/static
+*.ipynb_checkpoints
+.idea
+ETAI/DashApp/app2.py
+ETAI/DashApp/app1.py
+*.ipynb
+*__pycache__
+__pycache__
+*.csv
