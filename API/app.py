@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify, Response
 import pandas as pd
 from ETAI.source import RunIterNUL
 from ETAI.source.Models import LGBRegression
+
 from ETAI.source.Preprocessing import preprocess_final
 
 app = Flask(__name__)
@@ -71,19 +72,22 @@ def predict():
     truth = []
     plotpath = ""
     if arc == "DEF":
-        predictions, plotpath, truth = LGBRegression.start(startDate, endDate, days, plot=plot, target=target)
+        predictions, plotpath, truth = LGBRegression.start(startDate, endDate, days, plot=plot == "True", target=target)
     elif arc == "BIN1":
         predictions, truth, plotpath, predictions_clf = RunIterNUL.run_binary_1_iter(startDate, endDate, days,
-                                                                                     plot=plot, target=target)
+                                                                                     plot=plot == "True", target=target)
     elif arc == "NUL1":
-        predictions, truth, plotpath, predictions_clf = RunIterNUL.run_nul_1_iter(startDate, endDate, days, plot=plot,
+        predictions, truth, plotpath, predictions_clf = RunIterNUL.run_nul_1_iter(startDate, endDate, days,
+                                                                                  plot=plot == "True",
                                                                                   target=target)
     elif arc == "NUL3":
-        predictions, truth, plotpath, predictions_clf = RunIterNUL.run_nul_3_iter(startDate, endDate, days, plot=plot,
+        predictions, truth, plotpath, predictions_clf = RunIterNUL.run_nul_3_iter(startDate, endDate, days,
+                                                                                  plot=plot == "True",
                                                                                   target=target)
         predictions = np.array(predictions["preds"].to_list())
     elif arc == "DMDNUL1":
-        predictions, truth, plotpath, predictions_clf = RunIterNUL.run_dimdik(startDate, endDate, days, plot=plot,
+        predictions, truth, plotpath, predictions_clf = RunIterNUL.run_dimdik(startDate, endDate, days,
+                                                                              plot=plot == "True",
                                                                               target=target)
 
     date_range = pd.date_range(start=pd.to_datetime(endDate) - pd.DateOffset(days=int(days) - 1),

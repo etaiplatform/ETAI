@@ -5,14 +5,13 @@ import dash_html_components as html
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import date
-import datetime
 # from flask_caching import Cache
 # import os
 from sklearn.metrics import mean_absolute_percentage_error
 
 from ETAI.API.Requests import get_prep_data, predict_api
 
-df = get_prep_data("2018-01-01", "2021-06-05", "False")
+df = get_prep_data("2018-01-01", "2021-08-25", "False")
 preds = None
 TEMPLATE = 'plotly_white'
 colorsIdx = {1: 'red', 0: 'grey', -1: 'green'}
@@ -101,7 +100,7 @@ nyiso_layout = html.Div([
     html.Br(),
     html.Br(),
     dbc.Row([
-        dbc.Col(html.H1('Turkish Electricity Market DayAhead Price Prediction'), width=9),
+        dbc.Col(html.H1('Turkish Electricity Market Predictor and Analysis Tool - ETAI'), width=9),
         dbc.Col(width=2),
     ], justify='center'),
     dbc.Row([
@@ -325,7 +324,7 @@ def run_model(n_clicks, target_select, model_select, start_date, end_date, days)
     # predictions = pd.DataFrame(predictions, columns=["predictions"])
     # preds = predictions
     mae = mean_absolute_percentage_error(truth, preds["predictions"].tolist())
-    return '''Mean Absolute Error (MAE) for {}-{}: {:.1%} '''.format(start_date, end_date, mae)
+    return '''Mean Absolute Percentage Error (MAPE) for {}-{}: {:.1%} '''.format(start_date, end_date, mae)
 
     # return render_template('index.html', path=plotpath, mae=mean_absolute_error(truth, predictions),
     #                        mape=mean_absolute_percentage_error(truth, predictions),
@@ -354,7 +353,8 @@ def plot_nyiso_load_(value, n_clicks, n_days):
     # if n_days and df.empty else[]
     # if n_days and preds else[]
     # if n_days and preds else[]
-    print(n_days, "???")
+    print(n_days, "???asdasd")
+    print(list(df.iloc[-int(n_days) * 24:]['dayAheadPrices'].values), "asdas")
     global preds
 
     fig = go.Figure()
@@ -366,6 +366,7 @@ def plot_nyiso_load_(value, n_clicks, n_days):
             y=list(df.iloc[-int(n_days) * 24:]['dayAheadPrices'].values),
             name='Actual Load',
             line=dict(color='maroon', width=3)))
+
     if 'Predicted' in value:
         fig.add_trace(go.Scatter(
             x=list(

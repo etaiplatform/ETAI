@@ -166,7 +166,7 @@ def start_after_multi_models(data, clf_preds, startDate='2016-01-01', endDate='2
         plt.plot(data[target].iloc[-24 * int(n_days):].to_list(), label='truth')
         plt.plot(preds["preds"].to_list()[-24 * int(n_days):], label='predictions')
         plt.legend(loc="upper left")
-        path = '../flaskApp/static/plot' + startDate + '_' + endDate + '_' + str(n_days) + '.png'
+        path = 'ETAI/flaskApp/static/plot' + startDate + '_' + endDate + '_' + str(n_days) + '.png'
         plt.savefig(path)
         plt.clf()
         return preds[-24 * int(n_days):], path, data[target].iloc[-24 * int(n_days):].to_list()

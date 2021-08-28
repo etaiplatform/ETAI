@@ -38,6 +38,7 @@ params = {
     'force_col_wise': True
 }
 
+
 def predict_lastn_reg(model, days_pred, data, target):
     X = data.drop(target, axis=1)
     y = data[target]
@@ -52,12 +53,14 @@ def predict_lastn_reg(model, days_pred, data, target):
     x_train_kf, x_test_kf = None, None
     y_train_kf, y_test_kf = None, None
     for i, (train_index, test_index) in enumerate(kf):
+        # print(y[:test_index[0]].isnull().values.any())
         if not y[:test_index[0]].isnull().values.any():
             y_train_kf = y[:test_index[0]]
             x_train_kf = X.iloc[:test_index[0], :].copy()
             print("not fitting on {}".format(x_train_kf.iloc[-1].name))
         y_test_kf = y[test_index]
         x_test_kf = X.iloc[test_index, :].copy()
+        # print(x_test_kf)
         model.fit(x_train_kf.drop(target, axis=1, errors='ignore'), y_train_kf)
         preds = model.predict(x_test_kf.drop(target, axis=1, errors='ignore'))
         oof_preds[24 * i: 24 * (i + 1)] = (preds)
@@ -125,7 +128,7 @@ def start(startDate='2016-01-01', endDate='2020-12-31', n_days=2, plot=False, ta
         plt.plot(data[target].iloc[-24 * int(n_days):].to_list(), label="truth")
         plt.plot(list(oof_preds[-24 * int(n_days):]), label="predictions")
         plt.legend(loc="upper left")
-        path = '../flaskApp/static/plot' + startDate + '_' + endDate + '_' + str(n_days) + '.png'
+        path = 'ETAI/flaskApp/static/plot' + startDate + '_' + endDate + '_' + str(n_days) + '.png'
         plt.savefig(path)
         plt.clf()
         return pred_res, path, test_res
@@ -153,7 +156,7 @@ def start_after(data, preds, startDate='2016-01-01', endDate='2020-12-31', n_day
         plt.plot(data[target].iloc[-24 * int(n_days):].to_list(), label="truth")
         plt.legend(loc="upper left")
         plt.plot(list(oof_preds[-24 * int(n_days) + 1:]), label="prediction")
-        path = '../flaskApp/static/plot' + startDate + '_' + endDate + '_' + str(n_days) + '.png'
+        path = 'ETAI/flaskApp/static/plot' + startDate + '_' + endDate + '_' + str(n_days) + '.png'
         plt.savefig(path)
         plt.clf()
         return pred_res, path, test_res
@@ -180,7 +183,7 @@ def start_after_multi(data, preds, startDate='2016-01-01', endDate='2020-12-31',
         plt.plot(data[target].iloc[-24 * int(n_days):].to_list(), label="truth")
         plt.plot(list(oof_preds[-24 * int(n_days):]), label="prediction")
         plt.legend(loc="upper left")
-        path = '../flaskApp/static/plot' + startDate + '_' + endDate + '_' + str(n_days) + '.png'
+        path = 'ETAI/flaskApp/static/plot' + startDate + '_' + endDate + '_' + str(n_days) + '.png'
         plt.savefig(path)
         plt.clf()
         return pred_res, path, test_res
@@ -207,7 +210,7 @@ def start_after_dimdik_multi(data, preds, startDate='2016-01-01', endDate='2020-
         plt.plot(data[target].iloc[-24 * int(n_days):].to_list(), label="truth")
         plt.plot(list(oof_preds[-24 * int(n_days):]), label="prediction")
         plt.legend(loc="upper left")
-        path = '../flaskApp/static/plot' + startDate + '_' + endDate + '_' + str(n_days) + '.png'
+        path = 'ETAI/flaskApp/static/plot' + startDate + '_' + endDate + '_' + str(n_days) + '.png'
         plt.savefig(path)
         plt.clf()
         return pred_res, path, test_res

@@ -1,4 +1,4 @@
-from ETAI.source.Models import LGBBinary, LGBNuliter, LGB_NUL_CLF, LGBRegression
+from ETAI.source.Models import LGBBinary, LGBRegression, LGBNuliter, LGB_NUL_CLF
 
 
 def run_nul_3_iter(startDate, endDate, days, plot, target):

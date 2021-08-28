@@ -198,11 +198,18 @@ def divide_dates(start, end, intv):
 def read_real_time_gen(startDate, endDate):
     dates = list(divide_dates(startDate, endDate, int(pd.to_datetime(endDate).year - pd.to_datetime(startDate).year)))
     dfs = []
+    date_tups = []
     for i in range(len(dates) - 1):
-        print(dates[i], dates[i + 1])
-        real_time_gen = productionClient.production.real_time_gen(startDate=dates[i], endDate=dates[i + 1])
+        if i == 0:
+            tup = (dates[i], dates[i + 1])
+            date_tups.append(tup)
+        else:
+            tup = (str(pd.to_datetime(dates[i]) + datetime.timedelta(days=1))[:10], dates[i + 1])
+            date_tups.append(tup)
+    print(date_tups)
+    for i in range(len(date_tups)):
+        real_time_gen = productionClient.production.real_time_gen(startDate=date_tups[i][0], endDate=date_tups[i][1])
         real_time_gen = pd.DataFrame(real_time_gen)
-        print(real_time_gen)
         real_time_gen = real_time_gen[["date", "total"]]
         real_time_gen.columns = ["date", "production"]
         dfs.append(real_time_gen)
@@ -323,8 +330,8 @@ def preprocess_features(data, target, spike_interval=30):
 
 
 def preprocess_final(startDate='2016-01-01', endDate='2020-12-31', target="dayAheadPrices"):
-    if os.path.exists("../API/" + target + "_data.csv"):
-        data = pd.read_csv("../API/" + target + "_data.csv")
+    if os.path.exists("ETAI/API/" + target + "_data.csv"):
+        data = pd.read_csv("ETAI/API/" + target + "_data.csv")
         data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%d')
         if pd.to_datetime(data.iloc[-1]["date"]) < pd.to_datetime(endDate):
             print("catching up to date")
@@ -339,9 +346,10 @@ def preprocess_final(startDate='2016-01-01', endDate='2020-12-31', target="dayAh
                                      str(datetime.date.today()) if int(datetime.datetime.now().hour) < 13 else str(
                                          datetime.date.today() + datetime.timedelta(days=1)), target=target)
         print("prep_no_feat else")
-        print(data)
+        # print(data)
         data = reduce_mem_usage(data)
-        data.to_csv("../API/" + target + "_data.csv", index=False)
+        # print(os.getcwd())
+        data.to_csv("ETAI/API/" + target + "_data.csv", index=False)
         if pd.to_datetime(data.iloc[-1]["date"]) < pd.to_datetime(endDate):
             print("catching up to date")
             data = catch_up_2_date(data, endDate, target)
