@@ -2,7 +2,7 @@
 
 ## Hakkında
 ETAI, yapay zeka/makine öğrenmesi yöntemleri kullanılarak elektrik enerjisi piyasalarında fiyat, talep veya üretim tahmini yapan, web tabanlı gösterge panelinde önemli istatistikler, grafikler, tahmin yapılabilmesi için seçenekler bulunduran bir tahminleme platformudur.
-### Why ETAI:
+### Neden ETAI?:
 * Fiyat, üretim ve talep değerleri için bütünleşik bir yapıda tahminleme.
 * Son kullanıcıya yönelik gösterge paneli ve geliştiriciler tarafından özelleştirilebilmesi için bir API.
 * Türkiye elektrik piyasasında da sıkça görülen, ekstrem fiyat değerlerinin daha iyi tahminlenmesi için farklı çözüm mimarileri.
