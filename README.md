@@ -21,4 +21,4 @@ ETAI, yapay zeka/makine öğrenmesi yöntemleri kullanılarak elektrik enerjisi 
 * Sadece Tahminleme özelliğini kullanmak ve sonuçları görmek için, flaskApp klasöründeki app.py isimli dosyayı çalıştırın, lokal sunucuda çalışmaya başlayacaktır
 # ETAI / Görseller
 ## Gösterge Paneli:
-<p align="center"> <img width="460" height="300" src="https://raw.githubusercontent.com/etaiplatform/ETAI/blob/master/ETAI_DASH.png"> </p> 
+<p align="center"> <img width="460" height="300" src="https://raw.githubusercontent.com/etaiplatform/ETAI/master/ETAI_DASH.png"> </p> 
